@@ -49,32 +49,6 @@ window.addEventListener('scroll', () => {
     lastScroll = currentScroll;
 });
 
-// Обработка формы обратной связи
-const contactForm = document.getElementById('contactForm');
-
-if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Получаем данные формы
-        const formData = {
-            name: document.getElementById('name').value,
-            phone: document.getElementById('phone').value,
-            email: document.getElementById('email').value,
-            message: document.getElementById('message').value
-        };
-        
-        // Здесь можно добавить отправку данных на сервер
-        console.log('Отправка формы:', formData);
-        
-        // Показываем сообщение об успехе
-        alert('Спасибо! Ваша заявка отправлена. Мы свяжемся с вами в ближайшее время.');
-        
-        // Очищаем форму
-        contactForm.reset();
-    });
-}
-
 // Анимация счетчика для цифр
 function animateCounter(element, target, duration = 2000) {
     let start = 0;
@@ -144,6 +118,181 @@ document.addEventListener('DOMContentLoaded', () => {
         section.dataset.observerSection = 'true';
         observer.observe(section);
     });
+    
+    // Анимация для заголовка и преимуществ в блоке "Почему выбирают нас"
+    const whyUsSection = document.querySelector('.why-us-section');
+    if (whyUsSection) {
+        // Анимация заголовка
+        const title = whyUsSection.querySelector('.why-us-title');
+        if (title) {
+            title.classList.add('prepare-animation');
+        }
+        
+        // Анимация преимуществ
+        const featuresSection = whyUsSection.querySelector('.why-us-features');
+        if (featuresSection) {
+            // Подготавливаем элементы для анимации
+            const featureItems = featuresSection.querySelectorAll('.why-us-feature');
+            featureItems.forEach(item => {
+                item.classList.add('prepare-animation');
+            });
+            
+            const animateTitleAndFeatures = () => {
+                // Анимируем заголовок
+                if (title) {
+                    setTimeout(() => {
+                        title.classList.remove('prepare-animation');
+                        title.classList.add('animate');
+                    }, 100);
+                }
+                
+                // Анимируем элементы преимуществ
+                featureItems.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.classList.remove('prepare-animation');
+                        item.classList.add('animate');
+                    }, 300 + (index * 150));
+                });
+            };
+            
+            // Проверяем, виден ли блок сразу
+            const rect = whyUsSection.getBoundingClientRect();
+            const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+            
+            if (isVisible) {
+                // Если блок уже виден, запускаем анимацию сразу
+                setTimeout(animateTitleAndFeatures, 200);
+            } else {
+                // Иначе ждем появления на экране
+                const whyUsObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            animateTitleAndFeatures();
+                            whyUsObserver.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.15,
+                    rootMargin: '0px 0px -150px 0px'
+                });
+                
+                whyUsObserver.observe(whyUsSection);
+            }
+        }
+    }
+    
+    // Анимация для статистики в блоке "Почему выбирают нас"
+    const statsSection = document.querySelector('.why-us-stats');
+    if (statsSection) {
+        // Подготавливаем элементы для анимации
+        const statItems = statsSection.querySelectorAll('.why-us-stat-item');
+        statItems.forEach(item => {
+            item.classList.add('prepare-animation');
+        });
+        
+        // Функция анимации счетчика с плавным ускорением и замедлением
+        const animateCounter = (element, target, suffix = '', duration = 3000) => {
+            const start = 0;
+            let current = start;
+            let lastUpdateTime = performance.now();
+            const startTime = lastUpdateTime;
+            
+            // Адаптивная длительность в зависимости от размера числа
+            // Для больших чисел нужна более длительная анимация
+            const adaptiveDuration = target >= 1000 ? 4000 : target >= 100 ? 3200 : 2800;
+            
+            // Интервал обновления в миллисекундах (обновляем не каждый кадр, а с задержкой)
+            const updateInterval = target >= 1000 ? 50 : target >= 100 ? 40 : 30;
+            
+            // Плавная функция easing для более естественного движения
+            const easeOutQuart = (t) => {
+                return 1 - Math.pow(1 - t, 4);
+            };
+            
+            const updateCounter = () => {
+                const now = performance.now();
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / adaptiveDuration, 1);
+                
+                // Обновляем только с определенной частотой для более плавного эффекта
+                if (now - lastUpdateTime >= updateInterval) {
+                    const easedProgress = easeOutQuart(progress);
+                    
+                    // Вычисляем текущее значение с учетом плавного easing
+                    const targetValue = start + (target - start) * easedProgress;
+                    
+                    // Округляем до целого числа
+                    let displayValue = Math.floor(targetValue);
+                    
+                    // Ограничиваем максимальное значение
+                    displayValue = Math.min(displayValue, target);
+                    
+                    // Обновляем текст только если значение изменилось
+                    if (displayValue !== current) {
+                        current = displayValue;
+                        element.textContent = current + suffix;
+                        lastUpdateTime = now;
+                    }
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    // Убеждаемся, что финальное значение точно установлено
+                    element.textContent = target + suffix;
+                }
+            };
+            
+            requestAnimationFrame(updateCounter);
+        };
+        
+        const animateStats = () => {
+            statItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.remove('prepare-animation');
+                    item.classList.add('animate');
+                    
+                    // Запускаем анимацию счетчика для числа
+                    const numberElement = item.querySelector('.why-us-stat-number');
+                    if (numberElement && !numberElement.dataset.animated) {
+                        const target = parseInt(numberElement.dataset.target);
+                        const suffix = numberElement.dataset.suffix || '';
+                        numberElement.dataset.animated = 'true';
+                        
+                        // Запускаем счетчик с задержкой после начала анимации вырастания элемента
+                        // Задержка позволяет элементу сначала "вырасти", а затем начать считать
+                        setTimeout(() => {
+                            animateCounter(numberElement, target, suffix);
+                        }, 600 + (index * 120));
+                    }
+                }, index * 100);
+            });
+        };
+        
+        // Проверяем, виден ли блок сразу
+        const rect = statsSection.getBoundingClientRect();
+        const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+        
+        if (isVisible) {
+            // Если блок уже виден, запускаем анимацию сразу
+            setTimeout(animateStats, 100);
+        } else {
+            // Иначе ждем появления на экране
+            const statsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateStats();
+                        statsObserver.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            statsObserver.observe(statsSection);
+        }
+    }
 });
 
 // Валидация телефона
